@@ -2,7 +2,6 @@ const express = require('express');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const localStrategy = require('passport-local');
-const passportLocalMongoose = require('passport-local-mongoose');
 const bodyParser = require('body-parser');
 
 const User = require('./models/user');
@@ -16,15 +15,15 @@ const app = express();
 
 app.set('view engine', 'ejs');
 
-app.use(passport.initialize());
-app.use(passport.session());
-app.use(bodyParser.urlencoded({
-    extended: true
-}))
 app.use(require('express-session')({
     secret: 'Kyra is the best and cutest dog',
     resave: false,
     saveUninitialized: false
+}))
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(bodyParser.urlencoded({
+    extended: true
 }))
 
 passport.use(new localStrategy(User.authenticate()));
@@ -39,7 +38,7 @@ app.get('/', (req, res) => {
     res.render('home');
 })
 
-app.get('/secret', (req, res) => {
+app.get('/secret', isLoggedIn, (req, res) => {
     res.render('secret');
 })
 
@@ -78,7 +77,21 @@ app.post('/login', passport.authenticate('local', {
     successRedirect: '/secret',
     failureRedirect: '/login'
 }), (req, res) => {
-    
+
 })
+
+//logout logic
+app.get('/logout', (req, res) => {
+    req.logout();
+    res.redirect('/');
+})
+
+//middleware
+function isLoggedIn(req, res, next) {
+    if(req.isAuthenticated()) {
+        return next();
+    } 
+    res.redirect('/login');
+}
 
 app.listen(3001);
